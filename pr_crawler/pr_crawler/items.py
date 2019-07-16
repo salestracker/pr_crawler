@@ -9,8 +9,7 @@ import re
 
 import scrapy
 from scrapy.loader import ItemLoader
-from scrapy.loader.processors import Compose, Join, \
-  Identity
+from scrapy.loader.processors import MapCompose, Compose, Join, Identity
 from w3lib.html import remove_tags, replace_escape_chars, replace_entities
 
 _UNICODE_SANITIZE_WHITESPACE_REGEX = re.compile(r'[\s+]{2,}')
@@ -27,8 +26,10 @@ def sanitize_unicode_whitespace(text):
   return _UNICODE_SANITIZE_WHITESPACE_REGEX.sub(
     ' ', text).replace('\xa0', ' ').strip()
 
+
 def list_to_string():
   return Compose(Join(), replace_escape_chars, sanitize_unicode_whitespace)
+
 
 class CompanyOverviewItem(scrapy.Item):
   name = scrapy.Field(output_processor=list_to_string())
@@ -37,9 +38,15 @@ class CompanyOverviewItem(scrapy.Item):
                              replace_entities, sanitize_unicode_whitespace)
   )
   img = scrapy.Field()
+  url = scrapy.Field(
+    output_processor=Compose(lambda url_list: url_list[0])
+  )
+  contact_name = scrapy.Field()
+  title = scrapy.Field()
   phone = scrapy.Field()
   fax = scrapy.Field()
   email = scrapy.Field()
+  address = scrapy.Field()
   status = scrapy.Field(output_processor=list_to_string())
   founded = scrapy.Field(output_processor=list_to_string())
   symbol = scrapy.Field(output_processor=list_to_string())
@@ -48,7 +55,8 @@ class CompanyOverviewItem(scrapy.Item):
   pr_link_id = scrapy.Field(output_processor=list_to_string())
   employees = scrapy.Field(output_processor=list_to_string())
   website = scrapy.Field()
-  industries = scrapy.Field()
+  categories = scrapy.Field(output_processor=MapCompose(replace_escape_chars,
+                                                        replace_entities))
 
 
 class CompanyOverviewItemLoader(ItemLoader):
