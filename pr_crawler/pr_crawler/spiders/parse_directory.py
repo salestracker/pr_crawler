@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import urllib
+from collections import defaultdict
 
 from scrapy import Request
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
-from ..items import CompanyOverviewItem, CompanyOverviewItemLoader
+from ..items import CompanyOverviewItem, CompanyOverviewItemLoader, \
+  ContactItem, ContactItemLoader, list_to_string
 
 _BASE_URI = 'https://www.pr.com'
 _BIZ_LINKS = [
@@ -58,7 +60,8 @@ _COMPANY_CONTACT_URI = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
                         '1]//tr[2]/td/table//tr/td[2]/table//tr/td['
                         '3]/table//tr/td[2]/h3/a/@href')
 _CONTACT_PARSE_XPATH = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
-                        '3]//tr/td/table//tr[5]/td/table//tr[*]/td[2]/text()')
+                        '3]//tr/td/table//tr[*]/td/table//tr/td')
+                        
 
 
 class ParseDirectorySpider(CrawlSpider):
@@ -94,19 +97,15 @@ class ParseDirectorySpider(CrawlSpider):
     category_href = response.xpath(_COMPANY_CATEGORIES_URI).get()
     contact_href = response.xpath(_COMPANY_CONTACT_URI).get()
     category_attributes = ['categories']
-    contact_attributes = ['contact_name',
-                          'title',
-                          'phone',
-                          'fax',
-                          'email',
-                          'website',
-                          'address']
-    href_dict = {category_href: (category_attributes, _CATEGORIES_PARSE_XPATH),
-                 contact_href: (contact_attributes, _CONTACT_PARSE_XPATH)}
+    contact_attributes = []
+    href_dict = {category_href: (category_attributes,
+                                 _CATEGORIES_PARSE_XPATH, 'parse_attribute'),
+                 contact_href: (contact_attributes, _CONTACT_PARSE_XPATH,
+                                'parse_contact')}
     item_dict = item_loader.load_item()
     for href in href_dict:
       uri = urllib.parse.urljoin(_BASE_URI, href)
-      yield Request(uri, callback=self.parse_attribute,
+      yield Request(uri, callback=getattr(self, href_dict[href][2]),
                     meta={
                       'item': item,
                       'item_dict': item_dict,
@@ -117,10 +116,10 @@ class ParseDirectorySpider(CrawlSpider):
   
   def parse_attribute(self, response):
     item = response.meta['item']
-    item_loader = CompanyOverviewItemLoader(item=item, response=response)
     item_dict = response.meta['item_dict']
     attributes = response.meta['attributes']
     parse_xpath = response.meta['parse_xpath']
+    item_loader = CompanyOverviewItemLoader(item=item, response=response)
     parsed_values = response.xpath(parse_xpath).getall()
     matched_values = (zip(attributes, parsed_values) if len(attributes) ==
                                                         len(parsed_values)
@@ -128,5 +127,37 @@ class ParseDirectorySpider(CrawlSpider):
     for attribute, value in matched_values:
       if value:
         item_loader.add_value(attribute, value)
+    item_dict.update(item_loader.load_item())
+    return item_dict
+
+  def parse_contact(self, response):
+    item = response.meta['item']
+    item_dict = response.meta['item_dict']
+    parse_xpath = response.meta['parse_xpath']
+    item_loader = CompanyOverviewItemLoader(item=item, response=response)
+    parsed_array = response.xpath(parse_xpath).getall()
+    print('parsed_array', parsed_array)
+    contacts_dict = defaultdict(dict)
+    contacts_list = defaultdict(list)
+    contact_header = None
+    sanitize_string = list_to_string()
+    
+    for idx, parsed_line in enumerate(parsed_array):
+      if 'img' not in parsed_line:
+        if 'nav' in parsed_line:
+          contact_header = sanitize_string(parsed_line)
+        else:
+          contact_header = contact_header or 'Contact Info'
+          contacts_list[contact_header].append(parsed_line)
+    
+    for header_name in contacts_list:
+      contact_loader = ContactItemLoader(item=ContactItem(), response=response)
+      contact_array = contacts_list[header_name]
+      for idx in range(0, len(contact_array), 2):
+        field = sanitize_string(contact_array[idx]).lower()
+        contact_loader.add_value(field, contact_array[idx + 1])
+      contacts_dict[header_name].update(contact_loader.load_item())
+    print('contacts_dict', contacts_dict)
+    item_loader.add_value('contacts', contacts_dict)
     item_dict.update(item_loader.load_item())
     return item_dict
