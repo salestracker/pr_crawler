@@ -7,9 +7,10 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
 from ..items import CompanyOverviewItem, CompanyOverviewItemLoader, \
-  ContactItem, ContactItemLoader, list_to_string
+  ContactItem, ContactItemLoader, clean_contact_fields
 
 _BASE_URI = 'https://www.pr.com'
+_START_LINK = r'https://www.pr.com/business-directory/'
 _BIZ_LINKS = [
   r'business-directory/*',
 ]
@@ -56,9 +57,8 @@ _COMPANY_CATEGORIES_URI = '//table[2]//table//table[3]//tr/td//i/a/@href'
 _CATEGORIES_PARSE_XPATH = ('//table[2]//tr[1]//table//tr[2]/td[2]//table['
                            '3]//tr/td/div/a/text()')
 
-_COMPANY_CONTACT_URI = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
-                        '1]//tr[2]/td/table//tr/td[2]/table//tr/td['
-                        '3]/table//tr/td[2]/h3/a/@href')
+_COMPANY_CONTACT_URI = ('//table[2]//table//table[1]//table//tr/td['
+                        '2]//h3/a/@href[contains(., "contact")]')
 _CONTACT_PARSE_XPATH = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
                         '3]//tr/td/table//tr[*]/td/table//tr/td')
                         
@@ -67,15 +67,16 @@ _CONTACT_PARSE_XPATH = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
 class ParseDirectorySpider(CrawlSpider):
   name = 'parse_directory'
   allowed_domains = ['pr.com']
-  start_urls = [r'https://www.pr.com/business-directory/']
+  start_urls = ['https://www.pr.com/company-profile/overview/3257']
   
   rules = (
+    # Rule(
+    #   LinkExtractor(allow=_BIZ_LINKS, deny=_DENY_LINKS),
+    #   callback=None,
+    #   follow=True),
+  
     Rule(
-      LinkExtractor(allow=_BIZ_LINKS, deny=_DENY_LINKS),
-      callback=None,
-      follow=True),
-    Rule(
-      LinkExtractor(allow=_COMPANY_LINK, deny=_DENY_LINKS),
+      LinkExtractor(allow=_COMPANY_LINK, deny=_DENY_LINKS + _BIZ_LINKS),
       callback='parse_item',
       follow=False),
   )
@@ -136,28 +137,25 @@ class ParseDirectorySpider(CrawlSpider):
     parse_xpath = response.meta['parse_xpath']
     item_loader = CompanyOverviewItemLoader(item=item, response=response)
     parsed_array = response.xpath(parse_xpath).getall()
-    print('parsed_array', parsed_array)
     contacts_dict = defaultdict(dict)
     contacts_list = defaultdict(list)
     contact_header = None
-    sanitize_string = list_to_string()
-    
+    clean_field = clean_contact_fields()
     for idx, parsed_line in enumerate(parsed_array):
       if 'img' not in parsed_line:
         if 'nav' in parsed_line:
-          contact_header = sanitize_string(parsed_line)
+          contact_header = clean_field(parsed_line)
         else:
           contact_header = contact_header or 'Contact Info'
           contacts_list[contact_header].append(parsed_line)
     
-    for header_name in contacts_list:
+    for contact_header in contacts_list:
       contact_loader = ContactItemLoader(item=ContactItem(), response=response)
-      contact_array = contacts_list[header_name]
+      contact_array = contacts_list[contact_header]
       for idx in range(0, len(contact_array), 2):
-        field = sanitize_string(contact_array[idx]).lower()
+        field = clean_field(contact_array[idx]).lower()
         contact_loader.add_value(field, contact_array[idx + 1])
-      contacts_dict[header_name].update(contact_loader.load_item())
-    print('contacts_dict', contacts_dict)
+      contacts_dict[contact_header].update(contact_loader.load_item())
     item_loader.add_value('contacts', contacts_dict)
     item_dict.update(item_loader.load_item())
     return item_dict

@@ -33,8 +33,13 @@ def list_to_string():
 
 
 def clean_contact_tags():
-  return MapCompose(remove_tags, replace_escape_chars, replace_entities,
-                    sanitize_unicode_whitespace)
+  return Compose(lambda x: x[0], remove_tags, replace_escape_chars,
+                 sanitize_unicode_whitespace)
+
+
+def clean_contact_fields():
+  return Compose(remove_tags, replace_escape_chars,
+                 sanitize_unicode_whitespace, lambda x: x.strip(':'))
 
 class CompanyOverviewItem(scrapy.Item):
   name = scrapy.Field(output_processor=list_to_string())
@@ -74,5 +79,5 @@ class ContactItem(scrapy.Item):
 
 class ContactItemLoader(ItemLoader):
   default_input_processor = Identity()
-  default_output_processor = list_to_string()
+  default_output_processor = clean_contact_tags()
 
