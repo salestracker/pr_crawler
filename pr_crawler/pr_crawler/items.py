@@ -18,33 +18,33 @@ _UNICODE_SANITIZE_WHITESPACE_REGEX = re.compile(r'[\s+]{2,}')
 def sanitize_unicode_whitespace(text):
   '''Escapes extra whitespace and replaces hex space with whitespace.'''
   return _UNICODE_SANITIZE_WHITESPACE_REGEX.sub(
-      ' ', text).replace('\xa0', ' ').replace('-', '').strip()
+    ' ', text).replace('\xa0', ' ').replace('-', '').strip()
 
 
 def list_to_string():
   return Compose(Join(), remove_tags, replace_escape_chars,
-                  sanitize_unicode_whitespace)
+                 sanitize_unicode_whitespace)
 
 
 def clean_contact_tags():
   return Compose(lambda x: x[0], remove_tags, replace_escape_chars,
-                  sanitize_unicode_whitespace)
+                 sanitize_unicode_whitespace)
 
 
 def clean_contact_fields():
   return Compose(remove_tags, replace_escape_chars,
-                  sanitize_unicode_whitespace, lambda x: x.strip(':'))
+                 sanitize_unicode_whitespace, lambda x: x.strip(':'))
 
 
 class CompanyOverviewItem(scrapy.Item):
   name = scrapy.Field(output_processor=list_to_string())
   company_description = scrapy.Field(
-      output_processor=Compose(Join(''), remove_tags, replace_escape_chars,
-                                replace_entities, sanitize_unicode_whitespace)
+    output_processor=Compose(Join(''), remove_tags, replace_escape_chars,
+                             replace_entities, sanitize_unicode_whitespace)
   )
   img = scrapy.Field()
   url = scrapy.Field(
-      output_processor=Compose(lambda url_list: url_list[0])
+    output_processor=Compose(lambda url_list: url_list[0])
   )
   contacts = scrapy.Field()
   status = scrapy.Field(output_processor=list_to_string())
@@ -56,7 +56,7 @@ class CompanyOverviewItem(scrapy.Item):
   employees = scrapy.Field(output_processor=list_to_string())
   website = scrapy.Field()
   categories = scrapy.Field(output_processor=MapCompose(replace_escape_chars,
-
+  
                                                         replace_entities))
 
 
