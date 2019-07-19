@@ -69,7 +69,7 @@ class ParseDirectorySpider(CrawlSpider):
   # Links that are scrapped like:
   # 'https://www.pr.com/company-profile/overview/3257'
   start_urls = [_START_LINK]
-  
+
   rules = (
     Rule(
       LinkExtractor(allow=_BIZ_LINKS, deny=_DENY_LINKS),
@@ -80,7 +80,7 @@ class ParseDirectorySpider(CrawlSpider):
       callback='parse_item',
       follow=False),
   )
-  
+
   def parse_item(self, response):
     '''Parses company details.
 
@@ -117,7 +117,7 @@ class ParseDirectorySpider(CrawlSpider):
       yield Request(uri, callback=getattr(self, href_dict[href][2]),
                     meta=meta)
     return item_dict
-  
+
   def parse_attribute(self, response):
     item = response.meta['item']
     item_dict = response.meta['item_dict']
@@ -133,7 +133,7 @@ class ParseDirectorySpider(CrawlSpider):
         item_loader.add_value(attribute, value)
     item_dict.update(item_loader.load_item())
     return item_dict
-  
+
   def parse_contact(self, response):
     item = response.meta['item']
     item_dict = response.meta['item_dict']
@@ -151,7 +151,7 @@ class ParseDirectorySpider(CrawlSpider):
         else:
           contact_header = contact_header or 'Contact Info'
           contacts_list[contact_header].append(parsed_line)
-    
+
     for contact_header in contacts_list:
       contact_loader = ContactItemLoader(
         item=ContactItem(), response=response)
