@@ -24,8 +24,7 @@ class PrCrawlerItem(scrapy.Item):
 def sanitize_unicode_whitespace(text):
   '''Escapes extra whitespace and replaces hex space with whitespace.'''
   return _UNICODE_SANITIZE_WHITESPACE_REGEX.sub(
-    ' ', text).replace('\xa0', ' ').strip()
-
+    ' ', text).replace('\xa0', ' ').replace('-', '').strip()
 
 def list_to_string():
   return Compose(Join(), remove_tags, replace_escape_chars,

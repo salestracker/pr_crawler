@@ -67,14 +67,15 @@ _CONTACT_PARSE_XPATH = ('//table[2]//tr[1]/td/table//tr[2]/td[2]/table['
 class ParseDirectorySpider(CrawlSpider):
   name = 'parse_directory'
   allowed_domains = ['pr.com']
-  start_urls = ['https://www.pr.com/company-profile/overview/3257']
+  # Links that are scrapped like:
+  # 'https://www.pr.com/company-profile/overview/3257'
+  start_urls = [_START_LINK]
   
   rules = (
-    # Rule(
-    #   LinkExtractor(allow=_BIZ_LINKS, deny=_DENY_LINKS),
-    #   callback=None,
-    #   follow=True),
-  
+    Rule(
+      LinkExtractor(allow=_BIZ_LINKS, deny=_DENY_LINKS),
+      callback=None,
+      follow=True),
     Rule(
       LinkExtractor(allow=_COMPANY_LINK, deny=_DENY_LINKS + _BIZ_LINKS),
       callback='parse_item',
