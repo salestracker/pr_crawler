@@ -155,7 +155,8 @@ class ParseDirectorySpider(CrawlSpider):
       'attributes': href_val[0],
       'parse_xpath': href_val[1],
     }
-    yield Request(uri, callback=getattr(self, href_val[2]), meta=meta)
+    callback_fn = getattr(self, href_val[2])
+    yield Request(uri, callback=callback_fn, meta=meta)
   
   def parse_attribute(self, response):
     item_dict = response.meta['item_dict']
@@ -174,7 +175,8 @@ class ParseDirectorySpider(CrawlSpider):
       'item_dict': item_loader.load_item(),
       'parse_xpath': href_val[1],
     }
-    yield Request(uri, callback=getattr(self, href_val[2]), meta=meta)
+    callback_fn = getattr(self, href_val[2])
+    yield Request(uri, callback=callback_fn, meta=meta)
  
   def parse_contact(self, response):
     item_dict = response.meta['item_dict']
