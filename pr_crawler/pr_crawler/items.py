@@ -15,20 +15,25 @@ from w3lib.html import remove_tags, replace_escape_chars, replace_entities
 _UNICODE_SANITIZE_WHITESPACE_REGEX = re.compile(r'[\s+]{2,}')
 
 
-class PrCrawlerItem(scrapy.Item):
-  # define the fields for your item here like:
-  # name = scrapy.Field()
-  pass
-
-
 def sanitize_unicode_whitespace(text):
   '''Escapes extra whitespace and replaces hex space with whitespace.'''
   return _UNICODE_SANITIZE_WHITESPACE_REGEX.sub(
-    ' ', text).replace('\xa0', ' ').strip()
+    ' ', text).replace('\xa0', ' ').replace('-', '').strip()
 
 
 def list_to_string():
-  return Compose(Join(), replace_escape_chars, sanitize_unicode_whitespace)
+  return Compose(Join(), remove_tags, replace_escape_chars,
+                 sanitize_unicode_whitespace)
+
+
+def clean_contact_tags():
+  return Compose(lambda x: x[0], remove_tags, replace_escape_chars,
+                 sanitize_unicode_whitespace)
+
+
+def clean_contact_fields():
+  return Compose(remove_tags, replace_escape_chars,
+                 sanitize_unicode_whitespace, lambda x: x.strip(':'))
 
 
 class CompanyOverviewItem(scrapy.Item):
@@ -41,12 +46,7 @@ class CompanyOverviewItem(scrapy.Item):
   url = scrapy.Field(
     output_processor=Compose(lambda url_list: url_list[0])
   )
-  contact_name = scrapy.Field()
-  title = scrapy.Field()
-  phone = scrapy.Field()
-  fax = scrapy.Field()
-  email = scrapy.Field()
-  address = scrapy.Field()
+  contacts = scrapy.Field()
   status = scrapy.Field(output_processor=list_to_string())
   founded = scrapy.Field(output_processor=list_to_string())
   symbol = scrapy.Field(output_processor=list_to_string())
@@ -56,8 +56,24 @@ class CompanyOverviewItem(scrapy.Item):
   employees = scrapy.Field(output_processor=list_to_string())
   website = scrapy.Field()
   categories = scrapy.Field(output_processor=MapCompose(replace_escape_chars,
+  
                                                         replace_entities))
 
 
 class CompanyOverviewItemLoader(ItemLoader):
   default_input_processor = Identity()
+
+
+class ContactItem(scrapy.Item):
+  title = scrapy.Field()
+  contact = scrapy.Field()
+  phone = scrapy.Field()
+  fax = scrapy.Field()
+  email = scrapy.Field()
+  address = scrapy.Field()
+  website = scrapy.Field()
+
+
+class ContactItemLoader(ItemLoader):
+  default_input_processor = Identity()
+  default_output_processor = clean_contact_tags()
