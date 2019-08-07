@@ -15,7 +15,7 @@ from scrapy.utils.response import response_status_message
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
-import pdb
+
 
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   
