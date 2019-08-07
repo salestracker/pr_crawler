@@ -55,9 +55,8 @@ class CompanyOverviewItem(scrapy.Item):
   pr_link_id = scrapy.Field(output_processor=list_to_string())
   employees = scrapy.Field(output_processor=list_to_string())
   website = scrapy.Field()
-  categories = scrapy.Field(output_processor=MapCompose(replace_escape_chars,
-  
-                                                        replace_entities))
+  categories = scrapy.Field(
+    output_processor=MapCompose(replace_escape_chars, replace_entities))
 
 
 class CompanyOverviewItemLoader(ItemLoader):

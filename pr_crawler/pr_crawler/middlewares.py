@@ -90,6 +90,7 @@ class PrCrawlerDownloaderMiddleware(object):
     return response
   
   def process_exception(self, request, exception, spider):
+    """
     # Called when a download handler or a process_request()
     # (from other downloader middleware) raises an exception.
     
@@ -97,7 +98,8 @@ class PrCrawlerDownloaderMiddleware(object):
     # - return None: continue processing this exception
     # - return a Response object: stops process_exception() chain
     # - return a Request object: stops process_exception() chain
+    """
     pass
-  
+
   def spider_opened(self, spider):
     spider.logger.info('Spider opened: %s' % spider.name)

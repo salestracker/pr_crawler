@@ -132,7 +132,6 @@ class ParseDirectorySpider(CrawlSpider):
       object, a scrapy.Request object.
     """
     
-    parsed_dict = {}
     item = CompanyOverviewItem()
     item_loader = CompanyOverviewItemLoader(item=item, response=response)
     for key in _COMPANY_FIELDS_1:
