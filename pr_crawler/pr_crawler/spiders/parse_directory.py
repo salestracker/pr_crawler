@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import glob
 import os
-import pdb
 import random
-import urllib
 from collections import defaultdict
+from urllib import parse as urlParse
 
 from scrapy import Request, Selector
 from scrapy.linkextractors import LinkExtractor
@@ -106,6 +105,8 @@ def preset_jobdir(custom_settings_dict):
 
 
 class ParseDirectorySpider(CrawlSpider):
+  """Spider class for PR site."""
+  
   name = 'parse_directory'
   allowed_domains = ['pr.com']
   start_urls = [_START_URI]
@@ -123,11 +124,13 @@ class ParseDirectorySpider(CrawlSpider):
   )
   
   def parse_item(self, response):
-    '''Parses company details.
+    """Parse function for parsing company overview page of a company.
     
-    :param response:
-    :return:
-    '''
+    params:
+      response: object, A scrapy Response object.
+    returns:
+      object, a scrapy.Request object.
+    """
     
     parsed_dict = {}
     item = CompanyOverviewItem()
@@ -142,23 +145,24 @@ class ParseDirectorySpider(CrawlSpider):
     category_attributes = ['categories']
     contact_attributes = []
     href_dict = {
-      category_href: (category_attributes,
-                      _CATEGORIES_PARSE_XPATH, 'parse_attribute'),
-      contact_href: (contact_attributes, _CONTACT_PARSE_XPATH,
-                     'parse_contact'),
+      'endpoint': contact_href,
+      'parse_attributes': (contact_attributes, _CONTACT_PARSE_XPATH,
+                           'parse_contact'),
     }
-    uri = urllib.parse.urljoin(_BASE_URI, category_href)
-    href_val = href_dict.pop(category_href)
-    meta = {
-      'href_dict': href_dict,
-      'item_dict': item_loader.load_item(),
-      'attributes': href_val[0],
-      'parse_xpath': href_val[1],
-    }
-    callback_fn = getattr(self, href_val[2])
-    yield Request(uri, callback=callback_fn, meta=meta)
+    uri = urlParse.urljoin(_BASE_URI, category_href)
+    return self._yield_meta_request(uri, item_loader, _CATEGORIES_PARSE_XPATH,
+                                    category_attributes,
+                                    'parse_attribute', **href_dict)
   
   def parse_attribute(self, response):
+    """Parse function for parsing category page of a company.
+    
+    params:
+      response: object, A scrapy Response object.
+    returns:
+      object, a scrapy.Request object.
+    """
+    
     item_dict = response.meta['item_dict']
     selector = Selector(response)
     item_loader = CompanyOverviewItemLoader(item=item_dict,
@@ -168,17 +172,21 @@ class ParseDirectorySpider(CrawlSpider):
     parse_xpath = response.meta['parse_xpath']
     parsed_values = response.xpath(parse_xpath).getall()
     item_loader.add_value(attributes[0], parsed_values)
-    href_dict = response.meta['href_dict']
-    href, href_val = href_dict.popitem()
-    uri = urllib.parse.urljoin(_BASE_URI, href)
-    meta = {
-      'item_dict': item_loader.load_item(),
-      'parse_xpath': href_val[1],
-    }
-    callback_fn = getattr(self, href_val[2])
-    yield Request(uri, callback=callback_fn, meta=meta)
- 
+    href = response.meta['endpoint']
+    href_val = response.meta['parse_attributes']
+    uri = urlParse.urljoin(_BASE_URI, href)
+    return self._yield_meta_request(uri, item_loader, href_val[1], href_val[0],
+                                    href_val[2])
+  
   def parse_contact(self, response):
+    """Parse function for parsing contacts page.
+    
+    params:
+      response: object, A scrapy Response object.
+    returns:
+      dict, a dictionary of parsed items.
+    """
+    
     item_dict = response.meta['item_dict']
     selector = Selector(response)
     item_loader = CompanyOverviewItemLoader(item=item_dict,
@@ -208,3 +216,30 @@ class ParseDirectorySpider(CrawlSpider):
       contacts_dict[contact_header].update(contact_loader.load_item())
     item_loader.add_value('contacts', contacts_dict)
     return item_loader.load_item()
+  
+  def _yield_meta_request(self, uri_endpoint, item_loader, xpath,
+                          item_key, callback_fn, **kwargs):
+    """Yields a request object based on meta object.
+    
+    params:
+      uri_endpoint: str, the endpoint of with base uri to crawl.
+      item_loader: object, Scrapy ItemLoader object.
+      xpath: str, the XSLT xpath to crawl.
+      item_key: str, the Item key to be added to Item loader.
+      callback_fn: str, Function name to callback in Request object.
+      kwargs: dict(optional), Keyword arguments to pass on to meta.
+
+    yields:
+       object, a scrapy.Request object.
+    """
+    
+    uri = urlParse.urljoin(_BASE_URI, uri_endpoint)
+    meta = {
+      'item_dict': item_loader.load_item(),
+      'attributes': item_key,
+      'parse_xpath': xpath,
+    }
+    if kwargs:
+      meta.update(kwargs)
+    callback = getattr(self, callback_fn)
+    yield Request(uri, callback=callback, meta=meta)
