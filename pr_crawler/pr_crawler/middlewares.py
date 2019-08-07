@@ -1,11 +1,57 @@
 # -*- coding: utf-8 -*-
 
+import logging
 # Define here the models for your spider middleware
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
+import os
+import random
+import time
 
 from scrapy import signals
+from scrapy.downloadermiddlewares.retry import RetryMiddleware
+from scrapy.utils.response import response_status_message
+
+# Set log level to INFO.
+logging.getLogger().setLevel(logging.INFO)
+
+
+class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
+  
+  def __init__(self, settings):
+    super(type(self), self).__init__(settings)
+    self.__start_time = time.time()
+  
+  @property
+  def _start_time(self):
+    return self.__start_time
+  
+  @property
+  def _sleep_diff(self):
+    # Between 10 min and 1 hr.
+    return os.getenv('SNOOZE_TIME', random.randint(600, 3600))
+  
+  @property
+  def _sleep_time(self):
+    # Between 1 hr and 2 hr.
+    return os.getenv('WAKE_TIME', random.randint(3600, 7200))
+  
+  @_start_time.setter
+  def _start_time(self, new_time):
+    self.__start_time = new_time
+  
+  def process_response(self, request, response, spider):
+    if time.time() - self._start_time > self._sleep_diff:
+      logging.info('going to sleep')
+      time.sleep(self._sleep_time)  # few minutes
+      logging.info('woke up!')
+      self._start_time = time.time()
+      reason = response_status_message(response.status)
+      logging.info('wake up reason %s', reason)
+      return self._retry(request, reason, spider) or response
+    
+    return super(type(self), self).process_response(request, response, spider)
 
 
 class PrCrawlerSpiderMiddleware(object):
@@ -100,6 +146,6 @@ class PrCrawlerDownloaderMiddleware(object):
     # - return a Request object: stops process_exception() chain
     """
     pass
-
+  
   def spider_opened(self, spider):
     spider.logger.info('Spider opened: %s' % spider.name)
