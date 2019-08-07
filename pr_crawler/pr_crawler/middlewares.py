@@ -15,7 +15,7 @@ from scrapy.utils.response import response_status_message
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
-
+import pdb
 
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   
@@ -30,12 +30,12 @@ class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   @property
   def _sleep_diff(self):
     # Between 10 min and 1 hr.
-    return os.getenv('SNOOZE_TIME', random.randint(600, 3600))
+    return int(os.getenv('SNOOZE_DIFF', random.randint(600, 3600)))
   
   @property
   def _sleep_time(self):
     # Between 1 hr and 2 hr.
-    return os.getenv('WAKE_TIME', random.randint(3600, 7200))
+    return int(os.getenv('SNOOZE_TIME', random.randint(3600, 7200)))
   
   @_start_time.setter
   def _start_time(self, new_time):
