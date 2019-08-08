@@ -131,7 +131,6 @@ class ParseDirectorySpider(CrawlSpider):
     returns:
       object, a scrapy.Request object.
     """
-    
     item = CompanyOverviewItem()
     item_loader = CompanyOverviewItemLoader(item=item, response=response)
     for key in _COMPANY_FIELDS_1:
@@ -161,7 +160,6 @@ class ParseDirectorySpider(CrawlSpider):
     returns:
       object, a scrapy.Request object.
     """
-    
     item_dict = response.meta['item_dict']
     selector = Selector(response)
     item_loader = CompanyOverviewItemLoader(item=item_dict,
@@ -185,7 +183,6 @@ class ParseDirectorySpider(CrawlSpider):
     returns:
       dict, a dictionary of parsed items.
     """
-    
     item_dict = response.meta['item_dict']
     selector = Selector(response)
     item_loader = CompanyOverviewItemLoader(item=item_dict,
@@ -231,7 +228,6 @@ class ParseDirectorySpider(CrawlSpider):
     yields:
        object, a scrapy.Request object.
     """
-    
     uri = urlParse.urljoin(_BASE_URI, uri_endpoint)
     meta = {
       'item_dict': item_loader.load_item(),
