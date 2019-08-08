@@ -14,7 +14,6 @@ BOT_NAME = 'pr_crawler'
 SPIDER_MODULES = ['pr_crawler.spiders']
 NEWSPIDER_MODULE = 'pr_crawler.spiders'
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'pr_crawler (+http://www.yourdomain.com)'
 
@@ -40,8 +39,8 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 32
 
 # Override the default request headers:
 DEFAULT_REQUEST_HEADERS = {
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en',
 }
 
 # Enable or disable spider middlewares
@@ -53,8 +52,8 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-   # 'pr_crawler.middlewares.PrCrawlerDownloaderMiddleware': 543,
-  'pr_crawler.middlewares.PrCrawlSnoozeResumeMiddleware':100,
+    # 'pr_crawler.middlewares.PrCrawlerDownloaderMiddleware': 543,
+    'pr_crawler.middlewares.PrCrawlSnoozeResumeMiddleware': 100,
 }
 
 # Enable or disable extensions
