@@ -98,7 +98,8 @@ def preset_jobdir(custom_settings_dict):
   else:
     if not custom_settings_dict.get('JOBDIR', None):
       custom_settings_dict['JOBDIR'] = _RAND_DIR.format(
-          # Add as many keys as are preformatted and available in Custom Settings.
+          # Add as many keys as are preformat and available in Custom
+          # Settings.
           job_dir=_JOB_DIR,
           rand_num=random.randrange(*_RAND_RANGE)).strip()
   return custom_settings_dict
