@@ -20,7 +20,7 @@ logging.getLogger().setLevel(logging.INFO)
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   
   def __init__(self, settings):
-    super(type(self), self).__init__(settings)
+    super().__init__(settings)
     self.__start_time = time.time()
   
   @property
@@ -43,15 +43,18 @@ class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   
   def process_response(self, request, response, spider):
     if time.time() - self._start_time > self._sleep_diff:
-      logging.info('going to sleep')
+      spider.logger.info('Spider going to sleep: %s' % spider.name)
       time.sleep(self._sleep_time)  # few minutes
-      logging.info('woke up!')
+      spider.logger.info('Spider woke up!: %s' % spider.name)
       self._start_time = time.time()
       reason = response_status_message(response.status)
       logging.info('wake up reason %s', reason)
       return self._retry(request, reason, spider) or response
     
-    return super(type(self), self).process_response(request, response, spider)
+    return super().process_response(request, response, spider)
+  
+  def spider_opened(self, spider):
+    spider.logger.info('Spider opened: %s' % spider.name)
 
 
 class PrCrawlerSpiderMiddleware(object):
@@ -145,7 +148,7 @@ class PrCrawlerDownloaderMiddleware(object):
     # - return a Response object: stops process_exception() chain
     # - return a Request object: stops process_exception() chain
     """
-    pass
+    return None
   
   def spider_opened(self, spider):
     spider.logger.info('Spider opened: %s' % spider.name)

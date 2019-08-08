@@ -198,8 +198,8 @@ class ParseDirectorySpider(CrawlSpider):
     contact_header = None
     clean_field = clean_contact_fields()
     for idx, parsed_line in enumerate(parsed_array):
-      if 'img' not in parsed_line:
-        if 'nav' in parsed_line:
+      if r'<img' not in parsed_line:
+        if r'class="nav"' in parsed_line:
           contact_header = clean_field(parsed_line)
         else:
           contact_header = contact_header or 'Contact Info'
