@@ -129,7 +129,7 @@ class PrCrawlerDownloaderMiddleware(object):
     #   installed downloader middleware will be called
     return None
 
-  def process_response(self, request, response, spider):
+  def process_response(self, _request, response, _spider):
     # Called with the response returned from the downloader.
 
     # Must either;
