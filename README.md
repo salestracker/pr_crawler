@@ -1,0 +1,2 @@
+# pr_crawler
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/beb9102cb51b4b528da9486023b18d68)](https://app.codacy.com/app/salestracker/pr_crawler?utm_source=github.com&utm_medium=referral&utm_content=salestracker/pr_crawler&utm_campaign=Badge_Grade_Settings)
