@@ -212,7 +212,8 @@ class ParseDirectorySpider(CrawlSpider):
       contacts_dict[contact_header].update(contact_loader.load_item())
     item_loader.add_value('contacts', contacts_dict)
     item_loader.add_value('contacts_uri', response.url)
-    return item_loader.load_item()
+    item_dict = item_loader.load_item()
+    return item_dict
 
   def _yield_meta_request(self, uri_endpoint, item_loader, xpath, item_key,
                           callback_fn, **kwargs):

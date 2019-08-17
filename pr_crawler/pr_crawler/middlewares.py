@@ -14,26 +14,27 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy.exceptions import IgnoreRequest
 from scrapy.utils.response import response_status_message
 
-from . import firestore, fire_db
+from . import firestore, fire_db, encode_url
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
 
 
-@firestore.transactional
-def link_exists(request_url, collection, transaction):
+# @firestore.transactional
+def link_exists(request_url, collection):
   '''Check and skip already covered links.
   
   params:
     request_url: str, the requested url.
     collection: object, a firestore collection object.
-    transaction: object, a firestore transaction object.
+    # transaction: object, a firestore transaction object.
   
   return:
     boolean, whether transaction succeeded or not.
   '''
-  doc_ref = collection.document(request_url)
-  return bool(transaction.get(doc_ref))
+  url = encode_url(request_url)
+  doc_ref = collection.document(url)
+  return doc_ref.get().exists
     
 
 class SkipParsedUrlMiddleware(object):
@@ -46,9 +47,10 @@ class SkipParsedUrlMiddleware(object):
     self.__collection = fire_db.collection(self._collection_name)
 
   def process_request(self, request, spider):
-    transaction = fire_db.transaction()
+    # transaction = fire_db.transaction(max_attempts=5)
     # URL being scraped
-    url_exists = link_exists(request.url, self.__collection, transaction)
+    # url_exists = link_exists(request.url, self.__collection, transaction)
+    url_exists = link_exists(request.url, self.__collection)
     if url_exists:
       spider.logger.info('Skipping URL. Already scrapped or in '
                          'pipeline.')
@@ -57,7 +59,7 @@ class SkipParsedUrlMiddleware(object):
       return None
 
   def process_exception(self, request, exception, spider):
-    spider.logger.info('Skipping Request for url: %s with exception: %s' %
+    spider.logger.info('Skipping Request for url: %s with exception: %s',
                        request.url, exception)
     return None
     

@@ -53,7 +53,7 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     # 'pr_crawler.middlewares.PrCrawlerDownloaderMiddleware': 543,
-    'pr_crawler.middlewares.SkipParsedUrlMiddleware': 20,
+    'pr_crawler.middlewares.SkipParsedUrlMiddleware': 50,
     'pr_crawler.middlewares.PrCrawlSnoozeResumeMiddleware': 100,
 }
 
