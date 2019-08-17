@@ -35,13 +35,13 @@ def link_exists(request_url, collection):
   url = encode_url(request_url)
   doc_ref = collection.document(url)
   return doc_ref.get().exists
-    
+
 
 class SkipParsedUrlMiddleware(object):
   '''Skips Parsed Urls.'''
-  
+
   _collection_name = 'covered_links'
-  
+
   def __init__(self):
     super().__init__()
     self.__collection = fire_db.collection(self._collection_name)
@@ -52,8 +52,7 @@ class SkipParsedUrlMiddleware(object):
     # url_exists = link_exists(request.url, self.__collection, transaction)
     url_exists = link_exists(request.url, self.__collection)
     if url_exists:
-      spider.logger.info('Skipping URL. Already scrapped or in '
-                         'pipeline.')
+      spider.logger.info('Skipping URL. Already scrapped or in ' 'pipeline.')
       raise IgnoreRequest('Skipping URL. Already scrapped or in pipeline.')
     else:
       return None
@@ -62,7 +61,6 @@ class SkipParsedUrlMiddleware(object):
     spider.logger.info('Skipping Request for url: %s with exception: %s',
                        request.url, exception)
     return None
-    
 
 
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
