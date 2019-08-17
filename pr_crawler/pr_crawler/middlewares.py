@@ -11,13 +11,60 @@ import time
 
 from scrapy import signals
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
+from scrapy.exceptions import IgnoreRequest
 from scrapy.utils.response import response_status_message
+
+from . import firestore, fire_db
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
 
 
+@firestore.transactional
+def link_exists(request_url, collection, transaction):
+  '''Check and skip already covered links.
+  
+  params:
+    request_url: str, the requested url.
+    collection: object, a firestore collection object.
+    transaction: object, a firestore transaction object.
+  
+  return:
+    boolean, whether transaction succeeded or not.
+  '''
+  doc_ref = collection.document(request_url)
+  return bool(transaction.get(doc_ref))
+    
+
+class SkipParsedUrlMiddleware(object):
+  '''Skips Parsed Urls.'''
+  
+  _collection_name = 'covered_links'
+  
+  def __init__(self):
+    super().__init__()
+    self.__collection = fire_db.collection(self._collection_name)
+
+  def process_request(self, request, spider):
+    transaction = fire_db.transaction()
+    # URL being scraped
+    url_exists = link_exists(request.url, self.__collection, transaction)
+    if url_exists:
+      spider.logger.info('Skipping URL. Already scrapped or in '
+                         'pipeline.')
+      raise IgnoreRequest('Skipping URL. Already scrapped or in pipeline.')
+    else:
+      return None
+
+  def process_exception(self, request, exception, spider):
+    spider.logger.info('Skipping Request for url: %s with exception: %s' %
+                       request.url, exception)
+    return None
+    
+
+
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
+  '''Middleware that snoozes the crawler bot and resumes for sometime.'''
 
   def __init__(self, settings):
     super().__init__(settings)
@@ -27,22 +74,22 @@ class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   def _start_time(self):
     return self.__start_time
 
+  @_start_time.setter
+  def _start_time(self, new_time):
+    self.__start_time = new_time
+
   @property
-  def _sleep_diff(self):
+  def _running_time(self):
     # Between 10 min and 1 hr.
-    return int(os.getenv('SNOOZE_DIFF', random.randint(600, 3600)))
+    return int(os.getenv('RUNNING_TIME', random.randint(600, 3600)))
 
   @property
   def _sleep_time(self):
     # Between 1 hr and 2 hr.
     return int(os.getenv('SNOOZE_TIME', random.randint(3600, 7200)))
 
-  @_start_time.setter
-  def _start_time(self, new_time):
-    self.__start_time = new_time
-
   def process_response(self, request, response, spider):
-    if time.time() - self._start_time > self._sleep_diff:
+    if time.time() - self._start_time > self._running_time:
       spider.logger.info('Spider going to sleep: %s' % spider.name)
       time.sleep(self._sleep_time)  # few minutes
       spider.logger.info('Spider woke up!: %s' % spider.name)

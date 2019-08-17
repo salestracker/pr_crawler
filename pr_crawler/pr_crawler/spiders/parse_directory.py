@@ -12,8 +12,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from ..items import CompanyOverviewItem, CompanyOverviewItemLoader, \
   ContactItem, ContactItemLoader, clean_contact_fields
 
-_BASE_URI = 'https://www.pr.com'
-_START_URI = r'https://www.pr.com/business-directory/'
+from .. import _BASE_URI, _START_URI
 
 _BIZ_LINKS = [
     r'business-directory/*',
@@ -137,6 +136,7 @@ class ParseDirectorySpider(CrawlSpider):
     field_loader = item_loader.nested_xpath(_COMPANY_FIELDS_COMMON)
     for key in _COMPANY_FIELDS_2:
       field_loader.add_xpath(key, _COMPANY_FIELDS_2[key])
+    item_loader.add_value('company_overview_uri', response.url)
     category_href = response.xpath(_COMPANY_CATEGORIES_URI).get()
     contact_href = response.xpath(_COMPANY_CONTACT_URI).get()
     category_attributes = ['categories']
@@ -147,7 +147,7 @@ class ParseDirectorySpider(CrawlSpider):
         'parse_attributes':
             (contact_attributes, _CONTACT_PARSE_XPATH, 'parse_contact'),
     }
-    uri = urlParse.urljoin(_BASE_URI, category_href)
+    uri = category_href
     return self._yield_meta_request(uri, item_loader, _CATEGORIES_PARSE_XPATH,
                                     category_attributes, 'parse_attribute',
                                     **href_dict)
@@ -169,9 +169,10 @@ class ParseDirectorySpider(CrawlSpider):
     parse_xpath = response.meta['parse_xpath']
     parsed_values = response.xpath(parse_xpath).getall()
     item_loader.add_value(attributes[0], parsed_values)
+    item_loader.add_value('categories_uri', response.url)
     href = response.meta['endpoint']
     href_val = response.meta['parse_attributes']
-    uri = urlParse.urljoin(_BASE_URI, href)
+    uri = href
     return self._yield_meta_request(uri, item_loader, href_val[1], href_val[0],
                                     href_val[2])
 
@@ -210,6 +211,7 @@ class ParseDirectorySpider(CrawlSpider):
         contact_loader.add_value(field, contact_array[idx + 1])
       contacts_dict[contact_header].update(contact_loader.load_item())
     item_loader.add_value('contacts', contacts_dict)
+    item_loader.add_value('contacts_uri', response.url)
     return item_loader.load_item()
 
   def _yield_meta_request(self, uri_endpoint, item_loader, xpath, item_key,

@@ -53,6 +53,7 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     # 'pr_crawler.middlewares.PrCrawlerDownloaderMiddleware': 543,
+    'pr_crawler.middlewares.SkipParsedUrlMiddleware': 20,
     'pr_crawler.middlewares.PrCrawlSnoozeResumeMiddleware': 100,
 }
 
@@ -64,9 +65,10 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'pr_crawler.pipelines.PrCrawlerPipeline': 300,
-# }
+ITEM_PIPELINES = {
+    # 'pr_crawler.pipelines.PrCrawlerPipeline': 300,
+    'pr_crawler.pipelines.PrExportFirestorePipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

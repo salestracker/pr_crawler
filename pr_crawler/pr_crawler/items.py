@@ -37,6 +37,9 @@ def clean_contact_fields():
 
 
 class CompanyOverviewItem(scrapy.Item):
+  company_overview_uri = scrapy.Field()
+  categories_uri = scrapy.Field()
+  contacts_uri = scrapy.Field()
   name = scrapy.Field(output_processor=list_to_string())
   company_description = scrapy.Field(
       output_processor=Compose(Join(''), remove_tags, replace_escape_chars,
