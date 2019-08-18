@@ -19,9 +19,6 @@ RUN pip3.6 install --no-cache-dir -r requirements.txt
 ADD . /app
 
 COPY supplytracker-3b70d75569c5.json /app
-
-ARG GOOGLE_APPLICATION_CREDENTIALS
-
 # Run a WSGI server to serve the application. gunicorn must be declared as
 # a dependency in requirements.txt.
 # CMD gunicorn -b :$PORT main:app
