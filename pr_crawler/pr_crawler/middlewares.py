@@ -8,13 +8,15 @@ import logging
 import os
 import random
 import time
+import secrets
 
 from scrapy import signals
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy.exceptions import IgnoreRequest
 from scrapy.utils.response import response_status_message
 
-from . import firestore, fire_db, encode_url
+from . import FIRE_DB
+from . import encode_url
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
@@ -44,12 +46,13 @@ class SkipParsedUrlMiddleware(object):
 
   def __init__(self):
     super().__init__()
-    self.__collection = fire_db.collection(self._collection_name)
+    self.__collection = FIRE_DB.collection(self._collection_name)
+
+  def spider_opened(self, spider):
+    spider.logger.info('Spider opened: %s' % spider.name)
 
   def process_request(self, request, spider):
-    # transaction = fire_db.transaction(max_attempts=5)
     # URL being scraped
-    # url_exists = link_exists(request.url, self.__collection, transaction)
     url_exists = link_exists(request.url, self.__collection)
     if url_exists:
       spider.logger.info('Skipping URL. Already scrapped or in ' 'pipeline.')
@@ -62,12 +65,21 @@ class SkipParsedUrlMiddleware(object):
                        request.url, exception)
     return None
 
+  @classmethod
+  def from_crawler(cls, crawler):
+    # This method is used by Scrapy to create your spiders.
+    create_spider = cls()
+    crawler.signals.connect(create_spider.spider_opened,
+                            signal=signals.spider_opened)
+    return create_spider
+
 
 class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   '''Middleware that snoozes the crawler bot and resumes for sometime.'''
 
   def __init__(self, settings):
     super().__init__(settings)
+    self.__random = secrets.SystemRandom(secrets.randbelow(600))
     self.__start_time = time.time()
 
   @property
@@ -81,12 +93,14 @@ class PrCrawlSnoozeResumeMiddleware(RetryMiddleware):
   @property
   def _running_time(self):
     # Between 10 min and 1 hr.
-    return int(os.getenv('RUNNING_TIME', random.randint(600, 3600)))
+    choice = self.__random.choice(range(600, 3600))
+    return int(os.getenv('RUNNING_TIME', choice))
 
   @property
   def _sleep_time(self):
     # Between 1 hr and 2 hr.
-    return int(os.getenv('SNOOZE_TIME', random.randint(3600, 7200)))
+    choice = self.__random.choice(range(3600, 7200))
+    return int(os.getenv('SNOOZE_TIME', choice))
 
   def process_response(self, request, response, spider):
     if time.time() - self._start_time > self._running_time:
@@ -116,14 +130,14 @@ class PrCrawlerSpiderMiddleware(object):
     crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
     return s
 
-  def process_spider_input(self, response, spider):
+  def process_spider_input(self, _response, _spider):  # pylint: disable=R0201
     # Called for each response that goes through the spider
     # middleware and into the spider.
 
     # Should return None or raise an exception.
     return None
 
-  def process_spider_output(self, response, result, spider):
+  def process_spider_output(self, response, result, spider):  # pylint: disable=R0201
     # Called with the results returned from the Spider, after
     # it has processed the response.
 
@@ -158,13 +172,14 @@ class PrCrawlerDownloaderMiddleware(object):
   # passed objects.
 
   @classmethod
-  def from_crawler(cls, crawler):
+  def from_crawler(cls, crawler):  # pylint: disable=R0201
     # This method is used by Scrapy to create your spiders.
-    s = cls()
-    crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-    return s
+    create_spider = cls()
+    crawler.signals.connect(create_spider.spider_opened,
+                            signal=signals.spider_opened)
+    return create_spider
 
-  def process_request(self, request, spider):
+  def process_request(self, request, spider):  # pylint: disable=R0201
     # Called for each request that goes through the downloader
     # middleware.
 
@@ -176,7 +191,8 @@ class PrCrawlerDownloaderMiddleware(object):
     #   installed downloader middleware will be called
     return None
 
-  def process_response(self, request, response, spider):
+  # pylint: disable=R0201
+  def process_response(self, _request, response, _spider):
     # Called with the response returned from the downloader.
 
     # Must either;
@@ -185,7 +201,8 @@ class PrCrawlerDownloaderMiddleware(object):
     # - or raise IgnoreRequest
     return response
 
-  def process_exception(self, request, exception, spider):
+  # pylint: disable=R0201
+  def process_exception(self, _request, _exception, _spider):
     """
     # Called when a download handler or a process_request()
     # (from other downloader middleware) raises an exception.
@@ -197,5 +214,5 @@ class PrCrawlerDownloaderMiddleware(object):
     """
     return None
 
-  def spider_opened(self, spider):
+  def spider_opened(self, spider):  # pylint: disable=R0201
     spider.logger.info('Spider opened: %s' % spider.name)

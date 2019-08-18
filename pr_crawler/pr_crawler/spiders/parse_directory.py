@@ -88,7 +88,7 @@ def preset_jobdir(custom_settings_dict):
     dict, Map of custom settings.
 
   '''
-  cur_path = path = os.path.abspath(os.path.curdir)
+  cur_path = os.path.abspath(os.path.curdir)
   jobdir_path_rgx = os.path.join(cur_path, 'jobdir*')
   jobdir_fpath = glob.glob(jobdir_path_rgx)
   if jobdir_fpath and os.path.isdir(jobdir_fpath[0]):
@@ -176,7 +176,7 @@ class ParseDirectorySpider(CrawlSpider):
     return self._yield_meta_request(uri, item_loader, href_val[1], href_val[0],
                                     href_val[2])
 
-  def parse_contact(self, response):
+  def parse_contact(self, response):  # pylint: disable=R0201
     """Parse function for parsing contacts page.
     
     params:

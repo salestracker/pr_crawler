@@ -9,7 +9,7 @@ import logging
 
 from scrapy.exporters import BaseItemExporter
 
-from . import fire_db, encode_url
+from . import FIRE_DB, encode_url
 
 # Set log level to INFO.
 logging.getLogger().setLevel(logging.INFO)
@@ -40,7 +40,7 @@ class FireStoreItemExporter(BaseItemExporter):
     self.__firestore_batch_count = 0
 
   def _create_new_batch(self):
-    self.__batch = fire_db.batch()
+    self.__batch = FIRE_DB.batch()
 
   def export_item(self, item_url):
     if not self._exporter or not self.__batch:
@@ -60,12 +60,12 @@ class FireStoreItemExporter(BaseItemExporter):
       self._batch_count = 0
       self._create_new_batch()
 
-  def serialize_field(self, field, name, value):
+  def serialize_field(self, field, _name, value):  # pylint: disable=R0201
     serializer = field.get('serializer', lambda x: x)
     return serializer(value)
 
   def start_exporting(self):
-    self._exporter = fire_db.collection(self.__collection_name)
+    self._exporter = FIRE_DB.collection(self.__collection_name)
     self._create_new_batch()
 
   def finish_exporting(self):
@@ -115,5 +115,5 @@ class PrExportFirestorePipeline(object):
 
 class PrCrawlerPipeline(object):
 
-  def process_item(self, item, spider):
+  def process_item(self, item, _spider):
     return item

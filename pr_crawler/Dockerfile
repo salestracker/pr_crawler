@@ -10,6 +10,7 @@ RUN virtualenv --python=python3.6 /venv
 ENV VIRTUAL_ENV /venv
 ENV PATH /venv/bin:$PATH
 
+
 # Copy the application's requirements.txt and run pip to install all
 # dependencies into the virtualenv.
 ADD requirements.txt /app/requirements.txt

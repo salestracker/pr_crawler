@@ -37,6 +37,7 @@ def clean_contact_fields():
 
 
 class CompanyOverviewItem(scrapy.Item):
+  # pylint: disable=too-few-public-methods
   company_overview_uri = scrapy.Field(output_processor=list_to_string())
   categories_uri = scrapy.Field(output_processor=list_to_string())
   contacts_uri = scrapy.Field(output_processor=list_to_string())
@@ -63,7 +64,7 @@ class CompanyOverviewItemLoader(ItemLoader):
   default_input_processor = Identity()
 
 
-class ContactItem(scrapy.Item):
+class ContactItem(scrapy.Item):  # pylint: disable=too-few-public-methods
   title = scrapy.Field()
   contact = scrapy.Field()
   phone = scrapy.Field()
@@ -73,6 +74,6 @@ class ContactItem(scrapy.Item):
   website = scrapy.Field()
 
 
-class ContactItemLoader(ItemLoader):
+class ContactItemLoader(ItemLoader):  # pylint: disable=too-few-public-methods
   default_input_processor = Identity()
   default_output_processor = clean_contact_tags()

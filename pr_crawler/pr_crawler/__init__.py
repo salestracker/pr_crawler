@@ -8,7 +8,7 @@ batch = db.batch()
 from google.cloud import firestore
 
 # Project ID is determined by the GCLOUD_PROJECT environment variable
-fire_db = firestore.Client()
+FIRE_DB = firestore.Client()
 
 # Parsing urls
 _BASE_URI = 'https://www.pr.com'
