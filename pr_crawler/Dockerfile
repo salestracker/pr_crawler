@@ -10,6 +10,9 @@ RUN virtualenv --python=python3.6 /venv
 ENV VIRTUAL_ENV /venv
 ENV PATH /venv/bin:$PATH
 
+RUN apt-get update && apt-get install -y build-essential python3-pip
+RUN pip3 install google-cloud-profiler
+
 
 # Copy the application's requirements.txt and run pip to install all
 # dependencies into the virtualenv.
@@ -18,9 +21,8 @@ RUN pip3.6 install --no-cache-dir -r requirements.txt
 # Add the application source code.
 ADD . /app
 
-COPY supplytracker-3b70d75569c5.json /app
 # Run a WSGI server to serve the application. gunicorn must be declared as
 # a dependency in requirements.txt.
 # CMD gunicorn -b :$PORT main:app
-
+ENV GOOGLE_APPLICATION_CREDENTIALS=supplytracker-3b70d75569c5.json
 CMD ["python3.6", "./dance.py"]
