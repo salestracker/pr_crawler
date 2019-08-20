@@ -5,14 +5,14 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
-import logging
+from absl import logging
 
 from scrapy.exporters import BaseItemExporter
 
 from . import FIRE_DB, encode_url
 
 # Set log level to INFO.
-logging.getLogger().setLevel(logging.INFO)
+logging.set_verbosity(logging.INFO)
 
 
 class FireStoreItemExporter(BaseItemExporter):
@@ -25,7 +25,7 @@ class FireStoreItemExporter(BaseItemExporter):
     self._exporter = None
     self.__firestore_batch_count = 0
     self.__batch = None
-    self.__logger = logging.getLogger()
+    self.__logger = logging
 
   @property
   def _batch_count(self):
@@ -54,6 +54,7 @@ class FireStoreItemExporter(BaseItemExporter):
       self._batch_count = 1
     else:
       # Commit batch
+      self.__logger.info('committing batch write')
       self.__batch.commit()
       # Reset and start a new batch.
       self.__batch = None
@@ -71,6 +72,7 @@ class FireStoreItemExporter(BaseItemExporter):
   def finish_exporting(self):
     self.__logger.info('Finishing FireStoreItemExporter')
     if self.__batch:
+      self.__logger.info('committing batch write')
       self.__batch.commit()
 
   def process_export(self, item):
